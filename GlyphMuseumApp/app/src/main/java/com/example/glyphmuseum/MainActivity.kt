@@ -6,6 +6,9 @@ import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -15,6 +18,7 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.glyphmuseum.data.AppDatabase
@@ -53,7 +57,6 @@ class MainActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         // Re-check permission when coming back from settings
-        // Ideally handled with a lifecycle observer in compose, but this works for simple setup
     }
 
     private fun checkNotificationPermission(): Boolean {
@@ -82,20 +85,59 @@ fun PermissionScreen(onGrantClick: () -> Unit) {
 @Composable
 fun AppNavigation(database: AppDatabase) {
     val navController = rememberNavController()
-    
-    NavHost(navController = navController, startDestination = "main") {
-        composable("main") {
-            MainScreen(navController, database)
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = navBackStackEntry?.destination?.route
+
+    Scaffold(
+        bottomBar = {
+            if (currentRoute == "main" || currentRoute == "gallery") {
+                NavigationBar {
+                    NavigationBarItem(
+                        icon = { Icon(Icons.Default.List, contentDescription = "Rules") },
+                        label = { Text("Rules") },
+                        selected = currentRoute == "main",
+                        onClick = {
+                            navController.navigate("main") {
+                                popUpTo(navController.graph.startDestinationId) { saveState = true }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
+                        }
+                    )
+                    NavigationBarItem(
+                        icon = { Icon(Icons.Default.Settings, contentDescription = "Gallery") },
+                        label = { Text("Gallery") },
+                        selected = currentRoute == "gallery",
+                        onClick = {
+                            navController.navigate("gallery") {
+                                popUpTo(navController.graph.startDestinationId) { saveState = true }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
+                        }
+                    )
+                }
+            }
         }
-        composable("gallery") {
-            GalleryScreen(navController, database)
-        }
-        composable(
-            route = "editor/{ruleId}",
-            arguments = listOf(navArgument("ruleId") { type = NavType.LongType })
-        ) { backStackEntry ->
-            val ruleId = backStackEntry.arguments?.getLong("ruleId") ?: -1L
-            EditorScreen(navController, database, ruleId)
+    ) { innerPadding ->
+        NavHost(
+            navController = navController,
+            startDestination = "main",
+            modifier = Modifier.padding(innerPadding)
+        ) {
+            composable("main") {
+                MainScreen(navController, database)
+            }
+            composable("gallery") {
+                GalleryScreen(database)
+            }
+            composable(
+                route = "editor/{ruleId}",
+                arguments = listOf(navArgument("ruleId") { type = NavType.LongType })
+            ) { backStackEntry ->
+                val ruleId = backStackEntry.arguments?.getLong("ruleId") ?: -1L
+                EditorScreen(navController, database, ruleId)
+            }
         }
     }
 }

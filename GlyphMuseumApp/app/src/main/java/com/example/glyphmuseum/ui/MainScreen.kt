@@ -5,7 +5,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -33,12 +32,7 @@ fun MainScreen(navController: NavController, database: AppDatabase) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Glyph Museum", fontWeight = FontWeight.Bold) },
-                actions = {
-                    IconButton(onClick = { navController.navigate("gallery") }) {
-                        Icon(Icons.Default.Settings, contentDescription = "Gallery")
-                    }
-                }
+                title = { Text("Glyph Museum", fontWeight = FontWeight.Bold) }
             )
         },
         floatingActionButton = {
@@ -84,7 +78,7 @@ fun RuleCard(rule: RuleEntity, onClick: () -> Unit, onToggle: (Boolean) -> Unit)
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(text = "Priority: \${rule.priority}", style = MaterialTheme.typography.labelSmall)
-                Text(text = rule.appPackage ?: "Any App", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                Text(text = if (rule.appPackages.isNullOrEmpty()) "Any App" else "Specific Apps", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                 if (!rule.senderName.isNullOrEmpty()) {
                     Text(text = "Sender: \${rule.senderName}", style = MaterialTheme.typography.bodyMedium)
                 }

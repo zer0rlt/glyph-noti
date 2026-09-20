@@ -25,34 +25,25 @@ class NotificationListener : NotificationListenerService() {
         if (sbn == null) return
 
         val packageName = sbn.packageName
-        val notification = sbn.notification
-        val extras = notification.extras
-        
+        val extras = sbn.notification.extras
         val senderName = extras.getString(Notification.EXTRA_TITLE) ?: ""
         val text = extras.getCharSequence(Notification.EXTRA_TEXT)?.toString() ?: ""
-
-        Log.d("NotificationListener", "Received: pkg=\$packageName, sender=\$senderName, text=\$text")
 
         serviceScope.launch {
             val activeRules = database.ruleDao().getActiveRulesSync()
             
             for (rule in activeRules) {
-                // Check app package
-                if (!rule.appPackage.isNullOrEmpty() && rule.appPackage != packageName) {
-                    continue
+                // Check if we have app filter
+                if (!rule.appPackages.isNullOrEmpty()) {
+                    val packages = rule.appPackages.split(",")
+                    if (!packages.contains(packageName)) {
+                        continue
+                    }
                 }
                 
-                // Check sender name (case-insensitive substring match)
-                if (!rule.senderName.isNullOrEmpty() && !senderName.contains(rule.senderName, ignoreCase = true)) {
-                    continue
-                }
+                if (!rule.senderName.isNullOrEmpty() && !senderName.contains(rule.senderName, ignoreCase = true)) continue
+                if (!rule.messageContains.isNullOrEmpty() && !text.contains(rule.messageContains, ignoreCase = true)) continue
 
-                // Check message text
-                if (!rule.messageContains.isNullOrEmpty() && !text.contains(rule.messageContains, ignoreCase = true)) {
-                    continue
-                }
-
-                // Match found!
                 Log.d("NotificationListener", "Rule matched: \${rule.id}")
                 val gif = database.gifDao().getGifById(rule.gifId)
                 if (gif != null) {
@@ -61,8 +52,7 @@ class NotificationListener : NotificationListenerService() {
                         glyphPlayer.playGif(file)
                     }
                 }
-                // Stop evaluating further rules since we found the highest priority match
-                break
+                break // Stop evaluating since we found the highest priority match
             }
         }
     }

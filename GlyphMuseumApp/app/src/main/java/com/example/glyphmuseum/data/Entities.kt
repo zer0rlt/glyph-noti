@@ -16,7 +16,7 @@ data class GifEntity(
 data class RuleEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     var priority: Int, // Lower number = higher priority
-    @ColumnInfo(name = "app_package") val appPackage: String?, // null means any app
+    @ColumnInfo(name = "app_packages") val appPackages: String?, // comma-separated list of packages. null/empty means any app
     @ColumnInfo(name = "sender_name") val senderName: String?,
     @ColumnInfo(name = "message_contains") val messageContains: String?,
     @ColumnInfo(name = "gif_id") val gifId: Long,
